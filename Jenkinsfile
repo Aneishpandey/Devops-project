@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'maven'
+    }
+
     environment {
         DOCKERHUB_USERNAME = 'YOUR_DOCKERHUB_USERNAME'
         IMAGE_NAME = "${DOCKERHUB_USERNAME}/devops-demo"
