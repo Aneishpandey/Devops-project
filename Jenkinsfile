@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        DOCKERHUB_USERNAME = 'YOUR_DOCKERHUB_USERNAME'
+        DOCKERHUB_USERNAME = 'anishpandey735@gmail.com'
         IMAGE_NAME = "${DOCKERHUB_USERNAME}/devops-demo"
         IMAGE_TAG = "v${BUILD_NUMBER}"
         SONAR_PROJECT_KEY = 'devops-demo'
