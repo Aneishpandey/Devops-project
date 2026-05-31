@@ -65,11 +65,11 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                docker push anishpandey735/devops-demo:${BUILD_NUMBER}
-                docker push anishpandey735/devops-demo:latest
-                       '''
+                      sh """
+    echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+    docker push anishpandey735/devops-demo:\${IMAGE_TAG}
+    docker push anishpandey735/devops-demo:latest
+                         """
                 }
             }
         }
