@@ -1,0 +1,105 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'maven'
+    }
+
+    environment {
+        DOCKERHUB_USERNAME = 'anishpandey735'
+        IMAGE_NAME = "${DOCKERHUB_USERNAME}/devops-demo"
+        IMAGE_TAG = "v${BUILD_NUMBER}"
+        EC2_HOST = 'YOUR_EC2_PUBLIC_IP'
+        EC2_USER = 'jenkins'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh 'mvn test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                echo 'Pushing image to DockerHub...'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo "\$DOCKER_PASS" | docker login -u "\$DOCKER_USER" --password-stdin
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${IMAGE_NAME}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                echo 'Deploying to EC2...'
+                sshagent(['ec2-ssh-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} '
+                            docker pull ${IMAGE_NAME}:latest
+                            docker stop spring-app || true
+                            docker rm spring-app || true
+                            docker run -d \
+                                --name spring-app \
+                                -p 8080:8080 \
+                                --restart unless-stopped \
+                                ${IMAGE_NAME}:latest
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                echo 'Checking application health...'
+                sh "sleep 15"
+                sh "curl -f http://${EC2_HOST}:8080/health"
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo 'CD Pipeline completed! App deployed successfully!'
+        }
+        failure {
+            echo 'CD Pipeline failed. Check the logs.'
+        }
+        always {
+            sh "docker logout || true"
+        }
+    }
+}
