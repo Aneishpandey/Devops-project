@@ -9,7 +9,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'anishpandey735'
         IMAGE_NAME = "${DOCKERHUB_USERNAME}/devops-demo"
         IMAGE_TAG = "v${BUILD_NUMBER}"
-        EC2_HOST = '54.123.45.67'
+        EC2_HOST = '54.81.192.141'
         EC2_USER = 'jenkins'
     }
 
